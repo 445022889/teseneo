@@ -1,0 +1,5 @@
+{
+  "name": "Memo-Brutal",
+  "description": "A Neo-Brutalism style event & expense tracker running on Cloudflare Workers.",
+  "requestFramePermissions": []
+}

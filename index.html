@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memo-Brutal | 纪念日助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              mono: ['"Space Mono"', '"Noto Sans SC"', 'monospace'],
+              sans: ['"Noto Sans SC"', 'sans-serif'],
+            },
+            colors: {
+              'neo-bg': '#f0f0f0',
+              'neo-main': '#FF90E8', // Pink
+              'neo-accent': '#FFC900', // Yellow
+              'neo-success': '#23A094', // Teal
+              'neo-danger': '#FF4444', // Red
+              'neo-dark': '#1A1A1A',
+            },
+            boxShadow: {
+              'neo': '4px 4px 0px 0px #000000',
+              'neo-sm': '2px 2px 0px 0px #000000',
+              'neo-lg': '8px 8px 0px 0px #000000',
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        background-color: #e0e7ff;
+        background-image: radial-gradient(#a5b4fc 1px, transparent 1px);
+        background-size: 20px 20px;
+        font-family: 'Noto Sans SC', sans-serif;
+      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 12px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #fff;
+        border-left: 2px solid #000;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #000;
+        border: 2px solid #fff;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #333;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
