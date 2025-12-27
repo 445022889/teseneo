@@ -1,8 +1,8 @@
 // @ts-nocheck
 export interface Env {
   RENEW_KV: KVNamespace;
+  ASSETS: Fetcher; // Cloudflare Assets binding
   AUTH_PASSWORD?: string;
-  // Environment variables can still be used as overrides
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_ID?: string;
   BARK_KEY?: string;
@@ -18,22 +18,58 @@ const CORS_HEADERS = {
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url);
+
+    // 1. Handle CORS Preflight
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: CORS_HEADERS });
     }
 
-    const url = new URL(request.url);
+    // 2. Handle API Routes (/api/*)
+    if (url.pathname.startsWith("/api/")) {
+        return handleApiRequest(request, env, url);
+    }
+
+    // 3. Serve Static Assets (Frontend)
+    // If the request is not an API call, try to serve the file from ASSETS.
+    // This allows index.html, App.tsx, etc. to be loaded by the browser.
+    try {
+        const assetResponse = await env.ASSETS.fetch(request);
+        
+        // If file found (200), return it
+        if (assetResponse.ok) {
+            return assetResponse;
+        }
+        
+        // SPA Fallback: If requesting a path that doesn't exist (and isn't a file like .js), 
+        // return index.html (though our app is hash routing or simple, mainly for root /)
+        if (assetResponse.status === 404 && !url.pathname.includes('.')) {
+             const indexResponse = await env.ASSETS.fetch(new URL("/", request.url));
+             return indexResponse;
+        }
+
+        return assetResponse;
+    } catch (e) {
+        return new Response("Internal Error or Asset Not Found", { status: 500 });
+    }
+  },
+
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    await checkAndNotify(env);
+  },
+};
+
+// --- API Handler ---
+
+async function handleApiRequest(request: Request, env: Env, url: URL): Promise<Response> {
     const authHeader = request.headers.get("Authorization");
     const validPassword = env.AUTH_PASSWORD || 'admin';
     
-    if (request.method !== "OPTIONS") {
-        if (!authHeader || authHeader !== `Bearer ${validPassword}`) {
-            return new Response("Unauthorized", { status: 401, headers: CORS_HEADERS });
-        }
+    // Auth Check for API
+    if (!authHeader || authHeader !== `Bearer ${validPassword}`) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json", ...CORS_HEADERS } });
     }
 
-    // --- API ROUTES ---
-    
     // GET /api/data
     if (url.pathname.endsWith("/api/data") && request.method === "GET") {
       const events = await env.RENEW_KV.get("events", { type: "json" }) || [];
@@ -51,13 +87,13 @@ export default {
       return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json", ...CORS_HEADERS } });
     }
 
-    // POST /api/trigger - Cron Trigger (uses stored settings)
+    // POST /api/trigger
     if (url.pathname.endsWith("/api/trigger") && request.method === "POST") {
       await checkAndNotify(env);
       return new Response(JSON.stringify({ success: true, message: "Triggered" }), { headers: { "Content-Type": "application/json", ...CORS_HEADERS } });
     }
 
-    // POST /api/test-notify - Test specific config provided in body
+    // POST /api/test-notify
     if (url.pathname.endsWith("/api/test-notify") && request.method === "POST") {
       const body = await request.json();
       const settings = body.settings || {};
@@ -71,13 +107,8 @@ export default {
       }
     }
 
-    return new Response("Not Found", { status: 404, headers: CORS_HEADERS });
-  },
-
-  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
-    await checkAndNotify(env);
-  },
-};
+    return new Response("API Not Found", { status: 404, headers: CORS_HEADERS });
+}
 
 // --- LOGIC ---
 
@@ -102,35 +133,33 @@ async function checkAndNotify(env: Env) {
   }
 }
 
-// Logic to check if reminder is needed today based on interval and reminderDays
 function checkDateMatch(evt: any, today: Date): boolean {
-    // 1. Calculate the 'Target Date' (Next occurrence)
-    // NOTE: This replicates the logic in frontend 'utils/calculations.ts' but simplified for check
-    // In production, better to store 'nextOccurrence' in DB and update it after passing.
-    // For this Serverless Demo, we will just use a simple check.
-    
-    // For now, let's assume the frontend user updates the date, OR we just check if month/day matches for yearly.
-    // Real implementation requires robust date lib.
     const target = new Date(evt.date);
     const reminderDays = evt.reminderDays || 0;
     
-    // Check if today + reminderDays == Target Date (Simplified for Demo: Yearly/Monthly match)
+    // Check Date = Today + ReminderDays
     const checkDate = new Date(today);
     checkDate.setDate(today.getDate() + reminderDays);
     
+    // Simple logic:
+    // If Yearly: Check Month/Day
     if (evt.cycleType === 'YEARLY') {
         return checkDate.getMonth() === target.getMonth() && checkDate.getDate() === target.getDate();
     }
+    // If Monthly: Check Day
     if (evt.cycleType === 'MONTHLY') {
         return checkDate.getDate() === target.getDate();
     }
+    // If Once: Check Full Date
+    if (evt.cycleType === 'ONCE') {
+        return checkDate.getFullYear() === target.getFullYear() && 
+               checkDate.getMonth() === target.getMonth() && 
+               checkDate.getDate() === target.getDate();
+    }
     
-    // For custom intervals, you'd need the last execution date stored to calculate effectively.
-    // This is a limitation of this lightweight demo without a state machine.
     return false;
 }
 
-// Send actual notifications
 async function sendNotifications(env: Env, settings: any, message: string) {
     const telegramBotToken = settings.telegramBotToken || env.TELEGRAM_BOT_TOKEN;
     const telegramChatId = settings.telegramChatId || env.TELEGRAM_CHAT_ID;
@@ -161,7 +190,6 @@ async function sendNotifications(env: Env, settings: any, message: string) {
     }
 }
 
-// Test function
 async function sendTestNotification(env: Env, settings: any, type: string) {
     const msg = "🔔 Memo-Brutal 测试消息 / Test Message";
     if (type.includes('telegram')) {

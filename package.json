@@ -1,22 +1,19 @@
 {
   "name": "memo-brutal",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "version": "1.0.0",
+  "description": "Neo-Brutalism Event Tracker on Cloudflare Workers",
+  "main": "worker/index.ts",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [
+    "cloudflare-workers",
+    "react",
+    "serverless"
+  ],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "lucide-react": "^0.562.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "@cloudflare/workers-types": "^4.20240405.0"
   }
 }

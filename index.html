@@ -4,8 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Memo-Brutal | 纪念日助手</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Config -->
     <script>
       tailwind.config = {
         theme: {
@@ -16,10 +22,10 @@
             },
             colors: {
               'neo-bg': '#f0f0f0',
-              'neo-main': '#FF90E8', // Pink
-              'neo-accent': '#FFC900', // Yellow
-              'neo-success': '#23A094', // Teal
-              'neo-danger': '#FF4444', // Red
+              'neo-main': '#FF90E8', 
+              'neo-accent': '#FFC900', 
+              'neo-success': '#23A094', 
+              'neo-danger': '#FF4444', 
               'neo-dark': '#1A1A1A',
             },
             boxShadow: {
@@ -38,36 +44,53 @@
         background-size: 20px 20px;
         font-family: 'Noto Sans SC', sans-serif;
       }
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar {
-        width: 12px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #fff;
-        border-left: 2px solid #000;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #000;
-        border: 2px solid #fff;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #333;
-      }
+      ::-webkit-scrollbar { width: 12px; }
+      ::-webkit-scrollbar-track { background: #fff; border-left: 2px solid #000; }
+      ::-webkit-scrollbar-thumb { background: #000; border: 2px solid #fff; }
+      ::-webkit-scrollbar-thumb:hover { background: #333; }
+      
+      /* Hide uncompiled content initially */
+      body:not(.loaded) #root { display: none; }
     </style>
-  <script type="importmap">
+
+    <!-- Import Map for React -->
+    <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "lucide-react": "https://esm.sh/lucide-react@0.263.1",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+
+    <!-- Babel for browser-side TSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+  <link rel="stylesheet" href="/index.css">
 </head>
   <body>
     <div id="root"></div>
+
+    <!-- Entry Point: Compile TSX on the fly -->
+    <script type="text/babel" data-type="module" data-presets="typescript,react">
+        import React from 'react';
+        import ReactDOM from 'react-dom/client';
+        import App from './App'; // This works because Worker serves App.tsx on request
+
+        const rootElement = document.getElementById('root');
+        if (rootElement) {
+            const root = ReactDOM.createRoot(rootElement);
+            root.render(
+                <React.StrictMode>
+                    <App />
+                </React.StrictMode>
+            );
+            document.body.classList.add('loaded');
+        }
+    </script>
   <script type="module" src="/index.tsx"></script>
 </body>
 </html>
