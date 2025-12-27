@@ -30,19 +30,30 @@ export default {
         return handleApiRequest(request, env, url);
     }
 
-    // 3. Serve Static Assets (Frontend)
-    // If the request is not an API call, try to serve the file from ASSETS.
-    // This allows index.html, App.tsx, etc. to be loaded by the browser.
+    // 3. Serve Static Assets (Frontend) with extension resolution
     try {
-        const assetResponse = await env.ASSETS.fetch(request);
-        
-        // If file found (200), return it
-        if (assetResponse.ok) {
-            return assetResponse;
+        // A. Try fetching exact path first (e.g. index.html, main.css)
+        let assetResponse = await env.ASSETS.fetch(request);
+        if (assetResponse.ok) return assetResponse;
+
+        // B. If 404 and no extension (e.g. import App from './App'), try adding .tsx or .ts
+        // This is crucial for browser-side Babel compilation of source files
+        if (assetResponse.status === 404 && !url.pathname.split('/').pop().includes('.')) {
+            // Try .tsx
+            const tsxUrl = new URL(request.url);
+            tsxUrl.pathname += ".tsx";
+            const tsxResponse = await env.ASSETS.fetch(tsxUrl);
+            if (tsxResponse.ok) return tsxResponse;
+
+            // Try .ts
+            const tsUrl = new URL(request.url);
+            tsUrl.pathname += ".ts";
+            const tsResponse = await env.ASSETS.fetch(tsUrl);
+            if (tsResponse.ok) return tsResponse;
         }
         
-        // SPA Fallback: If requesting a path that doesn't exist (and isn't a file like .js), 
-        // return index.html (though our app is hash routing or simple, mainly for root /)
+        // C. SPA Fallback: If still not found and not a file request (e.g. /dashboard), return index.html
+        // But avoid doing this for missing JS files to prevent infinite loops of HTML returned as JS
         if (assetResponse.status === 404 && !url.pathname.includes('.')) {
              const indexResponse = await env.ASSETS.fetch(new URL("/", request.url));
              return indexResponse;
